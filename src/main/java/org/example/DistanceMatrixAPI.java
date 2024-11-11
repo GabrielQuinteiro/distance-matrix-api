@@ -6,13 +6,16 @@ import com.google.maps.errors.ApiException;
 import com.google.maps.model.DistanceMatrix;
 import com.google.maps.model.DistanceMatrixElement;
 import com.google.maps.model.DistanceMatrixRow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
 
 public class DistanceMatrixAPI {
     private static final String API_KEY = System.getenv("API_KEY");
+    private static final Logger logger = LoggerFactory.getLogger(DistanceMatrixAPI.class);
+
 
     public static void main(String[] args) {
 
@@ -24,7 +27,7 @@ public class DistanceMatrixAPI {
 //                "Rua V, 202, Curitiba, PR"  // E
         };
 
-        Map<String, Map<String, Integer>> matrizDistancia = new HashMap<>();
+        Long[][] matrizDistancia = new Long[enderecos.length][enderecos.length];
 
         GeoApiContext context = new GeoApiContext.Builder()
                 .apiKey(API_KEY)
@@ -37,19 +40,20 @@ public class DistanceMatrixAPI {
                 DistanceMatrixRow row = result.rows[i];
                 for (int j = 0; j < row.elements.length; j++) {
                     DistanceMatrixElement element = row.elements[j];
-                    if (i != j) {
-                        if (element.distance != null) {
-                            System.out.printf("Distância entre %s e %s: %s metros\n", enderecos[i], enderecos[j], element.distance.inMeters);
-                        } else {
-                            System.out.printf("Não foi possível calcular a distância entre %s e %s\n", enderecos[i], enderecos[j]);
-                        }
+                    if (element.distance != null) {
+                        System.out.printf("Distância entre %s e %s: %s metros\n", enderecos[i], enderecos[j], element.distance.inMeters);
+                        matrizDistancia[i][j] = result.rows[i].elements[j].distance.inMeters;
+                    } else {
+                        System.out.printf("Não foi possível calcular a distância entre %s e %s\n", enderecos[i], enderecos[j]);
                     }
                 }
             }
+            for (Long[] i : matrizDistancia) {
+                System.out.println(Arrays.toString(i));
+            }
         } catch (ApiException | InterruptedException | IOException e) {
-            e.printStackTrace();
+            logger.error("Erro ao processar matriz de distâncias");
         } finally {
-            // Encerrar o contexto ao final
             context.shutdown();
         }
     }
